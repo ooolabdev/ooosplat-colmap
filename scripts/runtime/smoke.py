@@ -115,15 +115,12 @@ def sanitized_env(platform):
         ):
             env.pop(key, None)
     if platform == "windows":
-        system_root = next(
-            (
-                value
-                for key, value in env.items()
-                if key.upper() == "SYSTEMROOT"
-            ),
-            None,
-        )
+        system_root_keys = [key for key in env if key.upper() == "SYSTEMROOT"]
+        system_root = env[system_root_keys[0]] if system_root_keys else None
         require(system_root, "Windows SystemRoot is unavailable")
+        for key in system_root_keys:
+            env.pop(key)
+        env["SystemRoot"] = system_root
         env["PATH"] = (
             str(Path(system_root) / "System32") + os.pathsep + system_root
         )

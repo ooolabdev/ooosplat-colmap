@@ -904,6 +904,8 @@ class WorkflowAndFixtureTests(unittest.TestCase):
         )
         self.assertNotIn("Cuda_Path", env)
         self.assertNotIn("vcpkg_root", env)
+        self.assertEqual(env["SystemRoot"], r"C:\Windows")
+        self.assertNotIn("SYSTEMROOT", env)
 
     def test_cache_miss_restore_and_failed_run_save_contract(self):
         import yaml
