@@ -694,6 +694,28 @@ def collect(build):
                 collector.files.setdefault(p.name.lower(), []).append(p)
     target = build.stage / "bin" / executable.name
     shutil.copy2(executable, target)
+    if build.platform == "windows":
+        extracted_manifest = build.logs / "colmap-windows-manifest.xml"
+        build.execute(
+            [
+                "mt.exe",
+                "-nologo",
+                f"-inputresource:{target};#1",
+                "-out:" + str(extracted_manifest),
+            ],
+            "windows-manifest",
+        )
+        manifest_text = extracted_manifest.read_text(
+            encoding="utf-8", errors="replace"
+        )
+        require(
+            re.search(
+                r"<activeCodePage\b[^>]*>\s*UTF-8\s*</activeCodePage>",
+                manifest_text,
+                re.I,
+            ),
+            "Final colmap.exe lacks the UTF-8 active code page manifest",
+        )
     collector.components["COLMAP"]["runtimeFiles"].append(
         target.relative_to(build.stage).as_posix()
     )

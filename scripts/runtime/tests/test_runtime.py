@@ -887,6 +887,16 @@ class ReleaseTests(unittest.TestCase):
 
 
 class WorkflowAndFixtureTests(unittest.TestCase):
+    def test_windows_manifest_enables_utf8_active_code_page(self):
+        manifest = (HERE / "windows-utf8.manifest").read_text(encoding="utf-8")
+        self.assertIn(
+            "schemas.microsoft.com/SMI/2019/WindowsSettings", manifest
+        )
+        self.assertRegex(
+            manifest,
+            r"<activeCodePage[^>]*>UTF-8</activeCodePage>",
+        )
+
     def test_windows_sanitized_environment_accepts_native_key_casing(self):
         with patch.dict(
             os.environ,

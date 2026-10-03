@@ -822,7 +822,10 @@ class Build:
             *[f"-D{name}=OFF" for name in LOCK["disabledFeatures"]],
         ]
         if self.platform == "windows":
-            flags.append(
+            manifest = self.root / "tools/windows-utf8.manifest"
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(HERE / "windows-utf8.manifest", manifest)
+            flags += [
                 "-DCCACHE:STRING="
                 + ";".join(
                     (
@@ -830,8 +833,14 @@ class Build:
                         self.tool("compilerLauncher"),
                         self.tool("ccache"),
                     )
-                )
-            )
+                ),
+                "-DCMAKE_EXE_LINKER_FLAGS:STRING=/MANIFESTINPUT:"
+                + str(manifest),
+            ]
+            self.state["windowsUtf8Manifest"] = {
+                "path": str(manifest),
+                "sha256": sha256(manifest),
+            }
         if self.platform == "macos":
             omp = self.execute(
                 ["brew", "--prefix", "libomp"], "configure"
@@ -884,6 +893,20 @@ class Build:
 
     def check_configuration(self):
         cache = (self.build / "CMakeCache.txt").read_text()
+        if self.platform == "windows":
+            manifest = self.state["windowsUtf8Manifest"]
+            require(
+                sha256(manifest["path"]) == manifest["sha256"],
+                "Windows UTF-8 manifest changed after configuration",
+            )
+            require(
+                str(Path(manifest["path"])).replace("\\", "/").casefold()
+                in (self.build / "build.ninja")
+                .read_text(encoding="utf-8")
+                .replace("\\", "/")
+                .casefold(),
+                "Actual linker commands omit the Windows UTF-8 manifest",
+            )
         files = list(
             (self.build / "CMakeFiles").glob("*/CMakeCUDACompiler.cmake")
         )
