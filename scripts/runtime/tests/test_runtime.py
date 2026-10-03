@@ -52,6 +52,9 @@ from smoke import (
     macos_sandbox_profile,
     sanitized_env,
 )
+from smoke import (
+    execute as smoke_execute,
+)
 
 
 class CudaIdentityTests(unittest.TestCase):
@@ -426,6 +429,32 @@ class RuntimeGateTests(unittest.TestCase):
                 ]
             },
         )
+
+    def test_failed_command_reports_and_preserves_output(self):
+        with tempfile.TemporaryDirectory() as d:
+            build_root = Path(d)
+            package = build_root / "stage"
+            package.mkdir()
+            log = build_root / "verify" / "mapper.log"
+            log.parent.mkdir()
+            with self.assertRaisesRegex(
+                RuntimeError, "actionable mapper error"
+            ):
+                smoke_execute(
+                    sys.executable,
+                    [
+                        "-c",
+                        "import sys; print('actionable mapper error'); sys.exit(7)",
+                    ],
+                    package,
+                    os.environ.copy(),
+                    log,
+                    "macos",
+                )
+            copied = build_root / "logs/acceptance-failure/mapper.log"
+            self.assertEqual(
+                copied.read_text().strip(), "actionable mapper error"
+            )
 
     def test_missing_runtime_plugin_and_license_block_delivery(self):
         for missing in (

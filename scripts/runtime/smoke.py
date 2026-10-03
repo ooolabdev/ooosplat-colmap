@@ -293,6 +293,7 @@ def execute(executable, args, root, env, log, platform):
         stderr=subprocess.STDOUT,
     )
     mapped = set()
+    return_code = None
     try:
         while process.poll() is None:
             if (
@@ -305,15 +306,22 @@ def execute(executable, args, root, env, log, platform):
                         if x.path
                     )
             time.sleep(0.05)
-        require(
-            process.wait() == 0,
-            f"CPU acceptance failed: {' '.join(map(str, args))}; see {log}",
-        )
+        return_code = process.wait()
     finally:
         if process.poll() is None:
             process.kill()
             process.wait()
         stream.close()
+    output = log.read_text(encoding="utf-8", errors="replace")
+    if return_code != 0:
+        diagnostic = Path(root).parent / "logs" / "acceptance-failure"
+        diagnostic.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(log, diagnostic / log.name)
+    require(
+        return_code == 0,
+        f"CPU acceptance failed ({return_code}): {' '.join(map(str, args))}; "
+        f"see {log}\nLast command output:\n{output[-8000:]}",
+    )
     for name in mapped:
         normalized = name.replace("\\", "/").casefold()
         require(
@@ -323,7 +331,7 @@ def execute(executable, args, root, env, log, platform):
             ),
             f"CPU process loaded a development library: {name}",
         )
-    return log.read_text(encoding="utf-8"), sorted(mapped)
+    return output, sorted(mapped)
 
 
 def keypoints(database, image):
