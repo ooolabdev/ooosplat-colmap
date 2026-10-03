@@ -265,6 +265,18 @@ class CompilerTests(unittest.TestCase):
 
 
 class CacheAndArchiveTests(unittest.TestCase):
+    def test_msvc_runtime_license_is_official_and_digest_locked(self):
+        license_entry = LOCK["msvcRuntimeLicense"]
+        self.assertEqual(
+            license_entry["url"],
+            "https://visualstudio.microsoft.com/wp-content/uploads/2021/09/Visual-C-Runtime-2015-2022-License-1.docx",
+        )
+        self.assertEqual(
+            license_entry["sha256"],
+            "f1e3d56ceb2ad68aae0711b910375009e651ac5530fa0760f0dea6e81e54fae1",
+        )
+        self.assertEqual(license_entry["bytes"], 39644)
+
     def test_compatible_family_changes_only_for_real_inputs(self):
         a = compatible_key(
             "windows",

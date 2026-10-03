@@ -16,6 +16,13 @@
     "featureType": "SIFT",
     "purpose": "Offline vocabulary retrieval and sequential loop detection"
   },
+  "msvcRuntimeLicense": {
+    "url": "https://visualstudio.microsoft.com/wp-content/uploads/2021/09/Visual-C-Runtime-2015-2022-License-1.docx",
+    "sha256": "f1e3d56ceb2ad68aae0711b910375009e651ac5530fa0760f0dea6e81e54fae1",
+    "bytes": 39644,
+    "title": "Microsoft Visual C++ Runtime 2015-2022 Software License Terms",
+    "directoryUrl": "https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/"
+  },
   "vcpkgCommit": "127402f1c75bb3d5ff6bce04b285faa4930a5aca",
   "cmakeVersion": "4.3.2",
   "ninjaVersion": "1.12.1",

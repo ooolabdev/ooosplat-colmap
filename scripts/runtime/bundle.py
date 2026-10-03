@@ -669,16 +669,24 @@ def collect(build):
                     collector.copy(p)
         if build.platform == "windows":
             redist = Path(os.environ["VCToolsRedistDir"])
-            texts = list(
-                (Path(os.environ["VSINSTALLDIR"]) / "Licenses").rglob(
-                    "license.*"
-                )
+            runtime_license = download(
+                LOCK["msvcRuntimeLicense"], build.root / "downloads"
+            )
+            require(
+                runtime_license.stat().st_size
+                == LOCK["msvcRuntimeLicense"]["bytes"],
+                "MSVC runtime license size mismatch",
             )
             collector.license(
                 "MSVC",
-                texts,
+                [runtime_license],
                 os.environ["VCToolsVersion"],
-                "Microsoft Visual Studio redistributable CRT",
+                {
+                    "license": LOCK["msvcRuntimeLicense"]["directoryUrl"],
+                    "document": LOCK["msvcRuntimeLicense"]["url"],
+                    "sha256": LOCK["msvcRuntimeLicense"]["sha256"],
+                    "redistributable": "Microsoft Visual Studio redistributable CRT",
+                },
             )
             for p in redist.glob("x64/Microsoft.VC*.*/*.dll"):
                 if p.parent.name.endswith((".CRT", ".OpenMP")):
