@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "colmapVersion": "4.2.1",
+  "upstreamRepository": "https://github.com/colmap/colmap.git",
+  "upstreamCommit": "bd1fcf654d2dd8fefa1466999c190a246f83f4b9",
+  "runtimeRevision": 1,
+  "offlineVocabulary": {
+    "url": "https://github.com/colmap/colmap/releases/download/3.11.1/vocab_tree_faiss_flickr100K_words256K.bin",
+    "sha256": "96ca8ec8ea60b1f73465aaf2c401fd3b3ca75cdba2d3c50d6a2f6f760f275ddc",
+    "bytes": 72412636,
+    "path": "lib/colmap/vocab_tree_faiss_flickr100K_words256K.bin",
+    "sourceRelease": "3.11.1",
+    "fileVersion": 1,
+    "descriptorDimension": 128,
+    "embeddingDimension": 64,
+    "featureType": "SIFT",
+    "purpose": "Offline vocabulary retrieval and sequential loop detection"
+  },
+  "vcpkgCommit": "127402f1c75bb3d5ff6bce04b285faa4930a5aca",
+  "cmakeVersion": "4.3.2",
+  "ninjaVersion": "1.12.1",
+  "ccacheVersion": "4.13.6",
+  "architectures": [
+    75,
+    80,
+    86,
+    89,
+    90,
+    100,
+    120
+  ],
+  "disabledFeatures": [
+    "GUI_ENABLED",
+    "OPENGL_ENABLED",
+    "MVS_ENABLED",
+    "ONNX_ENABLED",
+    "CGAL_ENABLED",
+    "LSD_ENABLED",
+    "DOWNLOAD_ENABLED",
+    "TESTS_ENABLED"
+  ],
+  "tools": {
+    "windows": {
+      "cmake": {
+        "url": "https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-windows-x86_64.zip",
+        "sha256": "83d20c23f5c5f64b3b328785e35b23c532e33057a97ed6294acaca3781b78a01"
+      },
+      "ninja": {
+        "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip",
+        "sha256": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a"
+      },
+      "ccache": {
+        "url": "https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-windows-x86_64.zip",
+        "sha256": "3d7cebb05850ad704e197b3f1d3f0f924ab6c9fdfc561578e146184fe9d89380"
+      }
+    },
+    "linux": {
+      "cmake": {
+        "url": "https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-linux-x86_64.tar.gz",
+        "sha256": "791ae3604841ca03cb3889a3ad89165346e4b180ae3448efd4b0caa9ef46d245"
+      },
+      "ninja": {
+        "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip",
+        "sha256": "6f98805688d19672bd699fbbfa2c2cf0fc054ac3df1f0e6a47664d963d530255"
+      },
+      "ccache": {
+        "url": "https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-linux-x86_64-glibc.tar.xz",
+        "sha256": "508b2a1217dc6e04a23e967c7b95a0fb45d8a7e16fde9e180919698f2e2be060"
+      }
+    },
+    "macos": {
+      "cmake": {
+        "url": "https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-macos-universal.tar.gz",
+        "sha256": "808ab43a0db04c8eec9ed7db12b90d7be1c8e2e75f4a060724d604a2043ccaf7"
+      },
+      "ninja": {
+        "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-mac.zip",
+        "sha256": "89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9"
+      },
+      "ccache": {
+        "url": "https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-darwin.tar.gz",
+        "sha256": "0274210ec9c9936ed5711d59b0de3167a51216a588ddde35f6bc828f366fe6d9"
+      }
+    }
+  },
+  "cuda": {
+    "release": "13.2.0",
+    "nvccVersion": "13.2.51",
+    "sdk": {
+      "windows": "13.2.0",
+      "linux": "13.2.20260303"
+    },
+    "components": {
+      "cuda_nvcc": "13.2.51",
+      "cuda_cudart": "13.2.51",
+      "cuda_crt": "13.2.51",
+      "libcurand": "10.4.2.51"
+    },
+    "archives": {
+      "windows": {
+        "cuda_nvcc": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/windows-x86_64/cuda_nvcc-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "a6bacac79adb923e310eb39f2b86d4d9e756c896d035dfead50c69403eca4661",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/LICENSE.txt"
+        },
+        "cuda_crt": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_crt/windows-x86_64/cuda_crt-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "02892bd6bc7ec832c5fc6fc794491803166ee8455bd87d52976c4b195b76c8e7",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_crt/LICENSE.txt"
+        },
+        "cuda_cudart": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/windows-x86_64/cuda_cudart-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "906b430b53e6396f7cbaa6874fbe7f9307a184e830b119a4ad3f58dc6e0165c6",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/LICENSE.txt"
+        },
+        "cuda_cccl": {
+          "version": "13.2.27",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cccl/windows-x86_64/cuda_cccl-windows-x86_64-13.2.27-archive.zip",
+          "sha256": "fb61bbca384ea9e5722f3b77cfdd635c916f33593d187562510ce14831aa629a",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cccl/LICENSE.txt"
+        },
+        "libnvvm": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/windows-x86_64/libnvvm-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "ef2a24cf40f9394e2f13df5a8a7315c65325103006a53692cd12b8c48431e372",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/LICENSE.txt"
+        },
+        "libnvptxcompiler": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libnvptxcompiler/windows-x86_64/libnvptxcompiler-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "19c12ad13d8d0a7ee2ad9f9896f18be3052684aa0b3e199ba57f344482dce45b",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/libnvptxcompiler/LICENSE.txt"
+        },
+        "libcurand": {
+          "version": "10.4.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libcurand/windows-x86_64/libcurand-windows-x86_64-10.4.2.51-archive.zip",
+          "sha256": "6971672940449b6325690ae889a41eac2a00a447ce28f4a8fa3578a2e29c87bb",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/libcurand/LICENSE.txt"
+        },
+        "cuda_nvrtc": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvrtc/windows-x86_64/cuda_nvrtc-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "e85d74221e685fd12040b129eb0f91055b34f9149651cf5259079e21ba690897",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvrtc/LICENSE.txt"
+        },
+        "cuda_nvtx": {
+          "version": "13.2.20",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvtx/windows-x86_64/cuda_nvtx-windows-x86_64-13.2.20-archive.zip",
+          "sha256": "44d428e710084bd304d38f0f285db776b5d126bacbe577121f43bd19d0161893",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvtx/LICENSE.txt"
+        },
+        "cuda_cuobjdump": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cuobjdump/windows-x86_64/cuda_cuobjdump-windows-x86_64-13.2.51-archive.zip",
+          "sha256": "85df7d24fa3dc534be028b655d77ec778f854eb3d9cef82b004bea65fe320976",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cuobjdump/LICENSE.txt"
+        }
+      },
+      "linux": {
+        "cuda_nvcc": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-x86_64/cuda_nvcc-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "706b996fefc59dc8d64d317fdf48d0aa84c4ae004eff43009dd918f40c5cc66a",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/LICENSE.txt"
+        },
+        "cuda_crt": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_crt/linux-x86_64/cuda_crt-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "fbc31fed55b7255591f3a19f575ca078827f5e6757d317d009f7ec1e69fcde4b",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_crt/LICENSE.txt"
+        },
+        "cuda_cudart": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64/cuda_cudart-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "539edc1056e44d319f2112e9971c6415d78d4dde04b3f6ffbd20ec808e718526",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/LICENSE.txt"
+        },
+        "cuda_cccl": {
+          "version": "13.2.27",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cccl/linux-x86_64/cuda_cccl-linux-x86_64-13.2.27-archive.tar.xz",
+          "sha256": "56e1bafb29faa87375b0484814870046530b88c0a421909096892f027ec1927b",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cccl/LICENSE.txt"
+        },
+        "libnvvm": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "e013fce38130d2337ea695aadc5ddd5dcfb78f9107903d72492b9819539749bb",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/LICENSE.txt"
+        },
+        "libnvptxcompiler": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libnvptxcompiler/linux-x86_64/libnvptxcompiler-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "52f5aba45e25c3941c38fcae3c4e8c014771c6d9ad73d6427255f9e154bec68d",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/libnvptxcompiler/LICENSE.txt"
+        },
+        "libcurand": {
+          "version": "10.4.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libcurand/linux-x86_64/libcurand-linux-x86_64-10.4.2.51-archive.tar.xz",
+          "sha256": "a089985ac24fff42b719ab42a015c7df39cd721a3d83bfa4af9249b9fca883dc",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/libcurand/LICENSE.txt"
+        },
+        "cuda_nvrtc": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvrtc/linux-x86_64/cuda_nvrtc-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "5a1897196b0276a82969db61ff4b3cd8d91fcf354f616945ed927f7224485083",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvrtc/LICENSE.txt"
+        },
+        "cuda_nvtx": {
+          "version": "13.2.20",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvtx/linux-x86_64/cuda_nvtx-linux-x86_64-13.2.20-archive.tar.xz",
+          "sha256": "db1adf4e636ec3cd9a7723a6d546ec0bc38293deb02fa0956a253d1a05e27eda",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvtx/LICENSE.txt"
+        },
+        "cuda_cuobjdump": {
+          "version": "13.2.51",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cuobjdump/linux-x86_64/cuda_cuobjdump-linux-x86_64-13.2.51-archive.tar.xz",
+          "sha256": "f0fb475dfc5b08a0e77cdcd05e7ea15402756ad8418898f4e93ada8b19661271",
+          "license": "CUDA Toolkit",
+          "licenseUrl": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cuobjdump/LICENSE.txt"
+        }
+      }
+    },
+    "metadata": {
+      "windows": {
+        "url": "https://developer.download.nvidia.com/compute/cuda/repos/windows/x86_64/version_13.2.0.json",
+        "sha256": "fe5067ed60a1e93d1c41c4480601c962cd8b39b7e9335b48673c09f318040de5"
+      },
+      "linux": {
+        "url": "https://developer.download.nvidia.com/compute/cuda/repos/runfile/x86_64/version_13.2.0.json",
+        "sha256": "d4fc6183d1a103906f70cc253c054e5ccab0297c421b2bb6201d970a01f9e357"
+      }
+    },
+    "redistributionManifest": {
+      "url": "https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.2.0.json",
+      "sha256": "8ce26ee1cb7ff13286f20dd2c6efbe268776bb13d71108c69cd04453b9d85d2b"
+    }
+  }
+}

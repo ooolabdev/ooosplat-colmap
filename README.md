@@ -1,6 +1,15 @@
 COLMAP
 ======
 
+This fork maintains a manually triggered COLMAP **4.2.1 runtime.1** build and
+distribution pipeline for Windows x64, Linux x64 and macOS arm64. It builds an
+independent, pinned upstream checkout; it does not change upstream algorithms.
+The runtime includes the locked offline SIFT/FAISS vocabulary for loop detection.
+See [runtime downloads, verification and reproduction](doc/runtime-distribution.md)
+and [OOOSplat integration notes](doc/runtime-ooosplat.md). Packages become available
+only after the real platform builds and acceptance checks pass and a maintainer
+explicitly publishes a Release. No precompiled build success is claimed here.
+
 About
 -----
 

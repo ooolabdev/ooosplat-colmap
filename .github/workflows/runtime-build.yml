@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: COLMAP runtime build
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build (all is required for a Release)
+        type: choice
+        options: [all, windows, linux, macos]
+        default: all
+permissions:
+  contents: read
+concurrency:
+  group: runtime-build-${{ github.ref }}-${{ inputs.platform }}
+  cancel-in-progress: false
+jobs:
+  select:
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+    steps:
+      - id: select
+        env:
+          PLATFORM: ${{ inputs.platform }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          platforms = {'windows': 'windows-2022', 'linux': 'ubuntu-22.04', 'macos': 'macos-14'}
+          selection = os.environ['PLATFORM']
+          assert selection == 'all' or selection in platforms
+          rows = [{'platform': p, 'runner': r} for p,r in platforms.items() if selection in ('all',p)]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('matrix='+json.dumps({'include':rows})+'\n')
+          PY
+  build:
+    name: Runtime (${{ matrix.platform }})
+    needs: select
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: '1'
+      PLATFORM: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Prepare validation tools
+        run: python -m pip install Pillow==11.3.0 psutil==7.0.0
+      - name: Prepare Windows environment
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: ./scripts/runtime/setup-windows.ps1
+      - name: Prepare Linux environment
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-12 g++-12 gfortran pkg-config autoconf automake libtool \
+            curl zip unzip patchelf libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxrandr-dev \
+            libxinerama-dev libxcursor-dev libxi-dev libglew-dev
+      - name: Prepare locked tools and upstream source
+        id: prepare
+        run: python scripts/runtime/runtime.py prepare --platform "$PLATFORM"
+      - name: Verify source and run path / CUDA / compiler-cache preflight
+        id: preflight
+        run: python scripts/runtime/runtime.py preflight --platform "$PLATFORM"
+      - name: Restore compatible vcpkg binaries
+        if: matrix.platform != 'macos'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.prepare.outputs.root }}/vcpkg-cache
+          key: ${{ steps.preflight.outputs.family }}-deps-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ steps.preflight.outputs.family }}-deps-
+      - name: Install dependencies
+        id: dependencies
+        run: python scripts/runtime/runtime.py dependencies --platform "$PLATFORM"
+      - name: Restore compatible compiler objects
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.prepare.outputs.root }}/ccache
+          key: ${{ steps.dependencies.outputs.family }}-objects-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ steps.dependencies.outputs.family }}-objects-
+      - name: Configure and audit actual compile commands
+        run: python scripts/runtime/runtime.py configure --platform "$PLATFORM"
+      - name: Compile
+        run: python scripts/runtime/runtime.py compile --platform "$PLATFORM"
+      - name: Collect runtime closure, licenses and relocate
+        run: python scripts/runtime/runtime.py collect --platform "$PLATFORM"
+      - name: Verify isolated CPU runtime
+        run: python scripts/runtime/runtime.py verify --platform "$PLATFORM"
+      - name: Package and verify re-extracted archive
+        id: package
+        run: python scripts/runtime/runtime.py package --platform "$PLATFORM"
+      - name: Upload verified runtime
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.package.outputs.artifact }}
+          path: ${{ steps.package.outputs.dist }}/*
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error
+      - name: Record real compiler-cache statistics
+        if: always() && steps.preflight.outcome == 'success'
+        run: python scripts/runtime/runtime.py stats --platform "$PLATFORM"
+      - name: Save successful dependency cache entries, including after failure
+        if: always() && steps.preflight.outcome == 'success' && matrix.platform != 'macos'
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.prepare.outputs.root }}/vcpkg-cache
+          key: ${{ steps.preflight.outputs.family }}-deps-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Save successful compiler cache entries, including after failure
+        if: always() && steps.dependencies.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.prepare.outputs.root }}/ccache
+          key: ${{ steps.dependencies.outputs.family }}-objects-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload diagnostic logs (not a runtime package)
+        if: always() && steps.prepare.outputs.root != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: diagnostics-${{ matrix.platform }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.prepare.outputs.root }}/logs
+            ${{ steps.prepare.outputs.root }}/state.json
+            ${{ steps.prepare.outputs.root }}/b/CMakeCache.txt
+            ${{ steps.prepare.outputs.root }}/b/compile_commands.json
+            ${{ steps.prepare.outputs.root }}/b/CMakeFiles/CMakeConfigureLog.yaml
+          retention-days: 30
+          if-no-files-found: warn

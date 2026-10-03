@@ -9,6 +9,7 @@ compile_commands.json
 AGENTS.override.md
 
 # Custom directories
+.runtime/
 .idea/
 .vscode
 .vs

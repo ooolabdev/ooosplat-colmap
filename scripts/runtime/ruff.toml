@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+extend = "../../ruff.toml"
+
+[lint]
+# Preserve official cross-platform environment-variable spelling. Long literal
+# CLI options, diagnostics and signed artifact identities cannot be reflowed.
+ignore = ["E501", "SIM112", "SIM117"]

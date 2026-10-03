@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: COLMAP runtime release
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful runtime-build run ID (all three platforms)
+        type: string
+        required: true
+      attempt:
+        description: Build run attempt
+        type: string
+        default: '1'
+        required: true
+      runtime_revision:
+        description: Revision already built; must match the lock
+        type: string
+        default: '1'
+        required: true
+      publish:
+        description: Explicitly publish the validated original archives
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: colmap-runtime-release
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: ${{ !inputs.publish }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Validate archives without publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.run_id }}
+          SOURCE_ATTEMPT: ${{ inputs.attempt }}
+          REVISION: ${{ inputs.runtime_revision }}
+        run: python scripts/runtime/release.py --run-id "$SOURCE_RUN" --attempt "$SOURCE_ATTEMPT" --revision "$REVISION"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-review-${{ github.run_id }}
+          path: |
+            .runtime/release/RUNTIME-INDEX.json
+            .runtime/release/release-notes.md
+          retention-days: 30
+          include-hidden-files: true
+  publish:
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Validate and publish the same archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.run_id }}
+          SOURCE_ATTEMPT: ${{ inputs.attempt }}
+          REVISION: ${{ inputs.runtime_revision }}
+        run: python scripts/runtime/release.py --run-id "$SOURCE_RUN" --attempt "$SOURCE_ATTEMPT" --revision "$REVISION" --publish
