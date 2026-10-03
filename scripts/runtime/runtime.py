@@ -834,8 +834,8 @@ class Build:
                         self.tool("ccache"),
                     )
                 ),
-                "-DCMAKE_EXE_LINKER_FLAGS:STRING=/MANIFESTINPUT:"
-                + str(manifest),
+                "-DCMAKE_EXE_LINKER_FLAGS:STRING=/MANIFEST:EMBED "
+                "/MANIFESTINPUT:" + str(manifest),
             ]
             self.state["windowsUtf8Manifest"] = {
                 "path": str(manifest),
