@@ -47,6 +47,7 @@ from common import (
 from compiler_launcher import normalize_argument
 from release import CHECKS, assert_new_release, validate_manifests
 from runtime import (
+    Build,
     linux_chainload_toolchain,
     normalize_windows_environment,
     windows_vcpkg_toolset,
@@ -887,6 +888,26 @@ class ReleaseTests(unittest.TestCase):
 
 
 class WorkflowAndFixtureTests(unittest.TestCase):
+    def test_transient_tool_bootstrap_is_retried(self):
+        build = Build.__new__(Build)
+        results = iter((RuntimeError("503"), RuntimeError("503"), "ok"))
+
+        def execute(_args, _name):
+            result = next(results)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        build.execute = execute
+        with patch("runtime.time.sleep") as sleep:
+            self.assertEqual(
+                build.execute_with_retry(["bootstrap"], "dependencies"),
+                "ok",
+            )
+        self.assertEqual(
+            [call.args[0] for call in sleep.call_args_list], [5, 10]
+        )
+
     def test_windows_manifest_enables_utf8_active_code_page(self):
         manifest = (HERE / "windows-utf8.manifest").read_text(encoding="utf-8")
         self.assertIn(

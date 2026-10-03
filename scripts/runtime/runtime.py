@@ -204,6 +204,21 @@ class Build:
             args, env=self.env, log=self.logs / (name + ".log"), **kwargs
         )
 
+    def execute_with_retry(self, args, name, attempts=3):
+        for attempt in range(1, attempts + 1):
+            try:
+                return self.execute(args, name)
+            except RuntimeError:
+                if attempt == attempts:
+                    raise
+                delay = 5 * attempt
+                print(
+                    f"{name} failed on attempt {attempt}/{attempts}; "
+                    f"retrying in {delay}s",
+                    flush=True,
+                )
+                time.sleep(delay)
+
     def prepare(self):
         expected = {"windows": "Windows", "linux": "Linux", "macos": "Darwin"}
         require(
@@ -711,7 +726,7 @@ class Build:
                 LOCK["vcpkgCommit"],
                 vcpkg,
             )
-            self.execute(
+            self.execute_with_retry(
                 [str(vcpkg / "bootstrap-vcpkg.bat"), "-disableMetrics"]
                 if self.platform == "windows"
                 else ["sh", vcpkg / "bootstrap-vcpkg.sh", "-disableMetrics"],
