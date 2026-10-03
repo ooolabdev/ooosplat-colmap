@@ -548,6 +548,11 @@ def local_verify(root, work, platform):
         "10",
         "--Mapper.init_min_num_inliers",
         "15",
+        # The authored fixture uses a deliberately small baseline so every
+        # projected patch remains visible.  Exercise real initialization while
+        # using a threshold appropriate for that known synthetic geometry.
+        "--Mapper.init_min_tri_angle",
+        "1",
     )
     models = [p for p in sparse.iterdir() if p.is_dir()]
     require(models, "CPU sparse reconstruction produced no model")
