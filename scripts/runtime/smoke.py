@@ -172,18 +172,24 @@ def inspect_package(root, platform):
     )
     components = read_json(root / "BUNDLED-COMPONENTS.json")
     covered = set()
+    license_texts = set()
     for component in components["components"]:
         require(
             component["licenseFiles"], f"No license for {component['name']}"
         )
         for name in component["licenseFiles"]:
+            require(
+                Path(name).parts and Path(name).parts[0] == "licenses",
+                f"License text is outside licenses/: {name}",
+            )
             path = root / name
             require(
                 path.is_relative_to(root)
                 and path.is_file()
                 and path.stat().st_size > 0,
-                "Missing license text",
+                f"Missing license text: {name}",
             )
+            license_texts.add(name)
         for name in component["runtimeFiles"]:
             require((root / name).is_file(), f"Missing component file: {name}")
             covered.add(name)
@@ -196,11 +202,20 @@ def inspect_package(root, platform):
     for path in root.rglob("*"):
         if not path.is_file():
             continue
+        relative = path.relative_to(root).as_posix()
         require(not DRIVERS.match(path.name), "NVIDIA driver was bundled")
+        development_suffix = path.suffix.lower() in (
+            ".a",
+            ".lib",
+            ".h",
+            ".hpp",
+            ".pdb",
+            ".obj",
+            ".o",
+        )
         require(
-            path.suffix.lower()
-            not in (".a", ".lib", ".h", ".hpp", ".pdb", ".obj", ".o"),
-            "Development file was bundled",
+            not development_suffix or relative in license_texts,
+            f"Development file was bundled: {relative}",
         )
         require(
             path.name.lower()
@@ -218,7 +233,7 @@ def inspect_package(root, platform):
         if not kind:
             continue
         require(
-            path.relative_to(root).as_posix() in covered,
+            relative in covered,
             f"Runtime has no license provenance: {path}",
         )
         runtime_files.append(path)

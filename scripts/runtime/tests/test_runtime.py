@@ -455,6 +455,30 @@ class RuntimeGateTests(unittest.TestCase):
             ):
                 inspect_package(root, "linux")
 
+    def test_development_suffix_is_allowed_only_for_declared_license_text(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.fixture(root)
+            license_file = root / "licenses/license.h"
+            (root / "licenses/license.txt").rename(license_file)
+            components_file = root / "BUNDLED-COMPONENTS.json"
+            components = read_json(components_file)
+            components["components"][0]["licenseFiles"] = ["licenses/license.h"]
+            write_json(components_file, components)
+            with patch("smoke.run", return_value=""):
+                inspect_package(root, "linux")
+
+            undeclared = root / "lib/development.a"
+            undeclared.write_bytes(b"archive")
+            with (
+                patch("smoke.run", return_value=""),
+                self.assertRaisesRegex(
+                    RuntimeError,
+                    r"Development file was bundled: lib/development\.a",
+                ),
+            ):
+                inspect_package(root, "linux")
+
     def test_missing_dependency_or_unrelocated_library_blocks_delivery(self):
         for response in (
             "libpng.so => not found",
