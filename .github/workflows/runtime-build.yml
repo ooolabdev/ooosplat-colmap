@@ -63,7 +63,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-12 g++-12 gfortran pkg-config autoconf automake libtool \
+          sudo apt-get install -y gcc-12 g++-12 gfortran-12 pkg-config autoconf automake libtool \
             curl zip unzip patchelf libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxrandr-dev \
             libxinerama-dev libxcursor-dev libxi-dev libglew-dev
       - name: Prepare locked tools and upstream source

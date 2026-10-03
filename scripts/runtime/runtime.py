@@ -111,6 +111,7 @@ def linux_chainload_toolchain(vcpkg):
         (
             'set(CMAKE_C_COMPILER "/usr/bin/gcc-12" CACHE FILEPATH "" FORCE)',
             'set(CMAKE_CXX_COMPILER "/usr/bin/g++-12" CACHE FILEPATH "" FORCE)',
+            'set(CMAKE_Fortran_COMPILER "/usr/bin/gfortran-12" CACHE FILEPATH "" FORCE)',
             'if(NOT VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")',
             '  message(FATAL_ERROR "Expected vcpkg x64 target")',
             "endif()",
@@ -172,6 +173,7 @@ class Build:
                         CUDAHOSTCXX="/usr/bin/g++-12",
                         CC="/usr/bin/gcc-12",
                         CXX="/usr/bin/g++-12",
+                        FC="/usr/bin/gfortran-12",
                     )
             self.env["PATH"] = (
                 os.pathsep.join(toolpaths) + os.pathsep + self.env["PATH"]
@@ -413,7 +415,7 @@ class Build:
         # compiler candidates must also participate in the compatibility key.
         identity["auxiliaryCompilers"] = {}
         if self.platform != "macos":
-            for name in ("gfortran", "flang", "flang-new"):
+            for name in ("gfortran-12", "gfortran", "flang", "flang-new"):
                 candidate = shutil.which(name, path=self.env["PATH"])
                 if candidate:
                     identity["auxiliaryCompilers"][name] = {
@@ -423,6 +425,14 @@ class Build:
                             [candidate, "--version"], "compiler-identity"
                         ).strip(),
                     }
+            if self.platform == "linux":
+                require(
+                    "gfortran-12" in identity["auxiliaryCompilers"],
+                    "Locked gfortran-12 compiler not found",
+                )
+                identity["selectedFortranCompiler"] = identity[
+                    "auxiliaryCompilers"
+                ]["gfortran-12"]
         if self.platform == "macos":
             identity["sdk"] = self.execute(
                 ["xcrun", "--show-sdk-version"], "sdk"

@@ -227,6 +227,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn('scripts/toolchains/linux.cmake")', text)
         self.assertIn('CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64"', text)
         self.assertIn("/usr/bin/gcc-12", text)
+        self.assertIn("/usr/bin/gfortran-12", text)
         self.assertIn("FORCE", text)
 
         changed = text.replace("gcc-12", "gcc-13")
@@ -836,6 +837,9 @@ class WorkflowAndFixtureTests(unittest.TestCase):
             (workflows / "runtime-build.yml").read_text(),
             Loader=yaml.BaseLoader,
         )
+        workflow_text = (workflows / "runtime-build.yml").read_text()
+        self.assertIn("gfortran-12", workflow_text)
+        self.assertNotIn("g++-12 gfortran pkg-config", workflow_text)
         self.assertEqual(
             build["jobs"]["build"]["strategy"]["fail-fast"], "false"
         )
