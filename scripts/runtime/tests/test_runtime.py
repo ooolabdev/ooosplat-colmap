@@ -21,6 +21,7 @@ from bundle import (
     LINUX_SYSTEM,
     Collector,
     collect,
+    linux_rpath,
     package,
     runtime_type,
     shared_runtime,
@@ -335,6 +336,10 @@ class CacheAndArchiveTests(unittest.TestCase):
         self.assertIsNotNone(LINUX_SYSTEM.match("libgcc_s.so.1"))
         self.assertIsNotNone(LINUX_SYSTEM.match("libc.so.6"))
         self.assertIsNone(LINUX_SYSTEM.match("libstdc++.so.6"))
+        self.assertIsNone(linux_rpath(Path("lib/libstdc++.so.6"), []))
+        with self.assertRaises(RuntimeError):
+            linux_rpath(Path("lib/libstdc++.so.6"), ["libunexpected.so"])
+        self.assertEqual(linux_rpath(Path("lib/libjpeg.so.8"), []), "$ORIGIN")
 
     def test_unknown_shared_object_and_relocated_reuse_keep_provenance(self):
         with tempfile.TemporaryDirectory() as d:

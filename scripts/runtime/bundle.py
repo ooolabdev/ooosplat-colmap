@@ -34,6 +34,20 @@ DRIVERS = re.compile(
 )
 
 
+def linux_rpath(path, bundled_dependencies):
+    path = Path(path)
+    if path.name.startswith("libstdc++.so."):
+        require(
+            not bundled_dependencies,
+            "Bundled libstdc++ unexpectedly needs a non-system runtime",
+        )
+        # Ubuntu 22.04 patchelf 0.14.3 crashes while rewriting GCC's
+        # libstdc++. It has only system-base dependencies and is selected by
+        # the executable's $ORIGIN/../lib rpath, so it needs no rpath itself.
+        return None
+    return "$ORIGIN" if path.parent.name == "lib" else "$ORIGIN/../lib"
+
+
 def runtime_type(path):
     with Path(path).open("rb") as stream:
         header = stream.read(64)
@@ -378,6 +392,7 @@ class Collector:
         # runtime_type rejects archives and relocatable objects before ldd.
         text = self.build.execute(["ldd", path], "dependency-closure")
         require("not found" not in text, f"Unresolved ELF dependencies: {path}")
+        bundled_dependencies = []
         for line in text.splitlines():
             match = re.match(r"\s*(\S+) => (/\S+)", line)
             if not match:
@@ -391,6 +406,7 @@ class Collector:
                 )
                 continue
             target = self.copy(origin)
+            bundled_dependencies.append(name)
             # Preserve the DT_NEEDED name even when resolving a versioned symlink.
             alias = self.root / "lib" / name
             if alias != target and not alias.exists():
@@ -398,15 +414,12 @@ class Collector:
                 self.components[self.owner(Path(origin))][
                     "runtimeFiles"
                 ].append(alias.relative_to(self.root).as_posix())
-        self.build.execute(
-            [
-                "patchelf",
-                "--set-rpath",
-                "$ORIGIN" if path.parent.name == "lib" else "$ORIGIN/../lib",
-                path,
-            ],
-            "relocation",
-        )
+        rpath = linux_rpath(path, bundled_dependencies)
+        if rpath:
+            self.build.execute(
+                ["patchelf", "--set-rpath", rpath, path],
+                "relocation",
+            )
         versions = self.build.execute(
             ["readelf", "--version-info", path], "elf-abi"
         )
