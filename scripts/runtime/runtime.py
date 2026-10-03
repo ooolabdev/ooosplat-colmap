@@ -59,6 +59,57 @@ def checkout(url, commit, destination):
     )
 
 
+WINDOWS_ENVIRONMENT_NAMES = (
+    "PATH",
+    "INCLUDE",
+    "LIB",
+    "LIBPATH",
+    "VCToolsInstallDir",
+    "VCToolsVersion",
+    "VSINSTALLDIR",
+    "VisualStudioVersion",
+    "WindowsSdkDir",
+    "WindowsSDKVersion",
+    "VSCMD_ARG_TGT_ARCH",
+    "VCToolsRedistDir",
+)
+
+
+def normalize_windows_environment(environment):
+    """Restore canonical VS variable names after os.environ.copy().
+
+    Python's Windows environment mapping is case-insensitive, but copy() is a
+    plain case-sensitive dict whose keys are normally upper-case.  Build stages
+    run in separate processes, so values imported through GITHUB_ENV need this
+    normalization before they are recorded or reused.
+    """
+    result = dict(environment)
+    folded = {key.casefold(): value for key, value in environment.items()}
+    for name in WINDOWS_ENVIRONMENT_NAMES:
+        value = folded.get(name.casefold())
+        if value is not None:
+            result[name] = value
+    return result
+
+
+def linux_chainload_toolchain(vcpkg):
+    official = (Path(vcpkg) / "scripts/toolchains/linux.cmake").as_posix()
+    return "\n".join(
+        (
+            'set(CMAKE_C_COMPILER "/usr/bin/gcc-12" CACHE FILEPATH "" FORCE)',
+            'set(CMAKE_CXX_COMPILER "/usr/bin/g++-12" CACHE FILEPATH "" FORCE)',
+            'if(NOT VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")',
+            '  message(FATAL_ERROR "Expected vcpkg x64 target")',
+            "endif()",
+            f'include("{official}")',
+            'if(NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")',
+            '  message(FATAL_ERROR "Expected x86_64 CMake target")',
+            "endif()",
+            "",
+        )
+    )
+
+
 class Build:
     def __init__(self, platform, root):
         self.platform = platform
@@ -78,6 +129,8 @@ class Build:
             read_json(self.state_file) if self.state_file.exists() else {}
         )
         self.env = os.environ.copy()
+        if self.platform == "windows":
+            self.env = normalize_windows_environment(self.env)
         self.env.update(
             {
                 "TMP": str(self.temp),
@@ -325,14 +378,22 @@ class Build:
             else result.returncode == 0,
             "Unable to identify host compiler",
         )
+        windows_sdk = {
+            key: self.env.get(key)
+            for key in ("VCToolsVersion", "WindowsSDKVersion", "VSINSTALLDIR")
+        }
+        if self.platform == "windows":
+            missing = [key for key, value in windows_sdk.items() if not value]
+            require(
+                not missing,
+                "Missing Visual Studio environment values: "
+                + ", ".join(missing),
+            )
         identity = {
             "compiler": str(Path(compiler).absolute()),
             "sha256": sha256(compiler),
             "version": version,
-            "sdk": {
-                k: self.env.get(k)
-                for k in ("VCToolsVersion", "WindowsSDKVersion", "VSINSTALLDIR")
-            },
+            "sdk": windows_sdk,
         }
         # Fortran selection affects LAPACK ABI even when COLMAP itself uses C++.
         # vcpkg-provided compilers are locked by the registry recipe; external
@@ -521,10 +582,27 @@ class Build:
             ]
             if p.is_file()
         }
+        dependency_recipe = {
+            "defaultFeatures": False,
+            "features": ["cuda"] if self.platform != "macos" else [],
+            "forceLockedCMakeAndNinja": self.platform != "macos",
+            "windowsSdk": (
+                identity["sdk"] if self.platform == "windows" else None
+            ),
+            "linuxChainload": (
+                linux_chainload_toolchain(Path("/locked-vcpkg-root"))
+                if self.platform == "linux"
+                else None
+            ),
+        }
+        files["scripts/runtime/generated-dependency-recipe"] = digest(
+            dependency_recipe
+        )
         self.state["cacheFamily"] = compatible_key(
             self.platform, identity, files, self.triplet
         )
         self.state["dependencyFiles"] = files
+        self.state["dependencyRecipe"] = dependency_recipe
         self.state["preflightPassed"] = True
         self.save()
         emit(
@@ -581,6 +659,7 @@ class Build:
             ).strip()
         else:
             vcpkg = self.root / "v"
+            self.env["VCPKG_FORCE_SYSTEM_BINARIES"] = "1"
             checkout(
                 "https://github.com/microsoft/vcpkg.git",
                 LOCK["vcpkgCommit"],
@@ -599,14 +678,13 @@ class Build:
             )
             content = original.read_text()
             if self.platform == "windows":
-                version = self.env["VCToolsVersion"].rstrip("\\/")
+                sdk = self.state["toolchain"]["sdk"]
+                version = sdk["VCToolsVersion"].rstrip("\\/")
                 content += f'\nset(VCPKG_PLATFORM_TOOLSET v143)\nset(VCPKG_PLATFORM_TOOLSET_VERSION "{version}")\n'
-                content += f'set(VCPKG_VISUAL_STUDIO_PATH "{self.env["VSINSTALLDIR"].replace(chr(92), "/")}")\n'
+                content += f'set(VCPKG_VISUAL_STUDIO_PATH "{sdk["VSINSTALLDIR"].replace(chr(92), "/")}")\n'
             else:
                 chain = triplets / "host.cmake"
-                chain.write_text(
-                    "set(CMAKE_C_COMPILER /usr/bin/gcc-12)\nset(CMAKE_CXX_COMPILER /usr/bin/g++-12)\n"
-                )
+                chain.write_text(linux_chainload_toolchain(vcpkg))
                 content += f'\nset(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "{chain.as_posix()}")\n'
             content += (
                 "\nset(VCPKG_ENV_PASSTHROUGH CUDA_PATH CUDACXX CUDAHOSTCXX)\n"
@@ -630,6 +708,18 @@ class Build:
                     "--x-feature=cuda",
                 ],
                 "dependencies",
+            )
+            bundled_build_tools = [
+                path
+                for path in (vcpkg / "downloads/tools").rglob("*")
+                if path.is_file()
+                and path.name.lower()
+                in ("cmake", "cmake.exe", "ninja", "ninja.exe")
+            ]
+            require(
+                not bundled_build_tools,
+                "vcpkg bypassed the locked CMake or Ninja: "
+                + ", ".join(map(str, bundled_build_tools)),
             )
             status = (self.root / "i/vcpkg/status").read_text()
             require(

@@ -37,6 +37,7 @@ from common import (
     write_json,
 )
 from release import CHECKS, assert_new_release, validate_manifests
+from runtime import linux_chainload_toolchain, normalize_windows_environment
 from smoke import (
     check_loop_matches,
     check_mask,
@@ -184,6 +185,32 @@ class CompilerTests(unittest.TestCase):
             check_paths(["D:/c/s/short.cu"], "D:/c/" + "a" * 40, "windows")
         check_paths(
             ["D:/c/s/file.cu", "D:/c/b/file.cu.obj"], "D:/c/t", "windows"
+        )
+
+    def test_windows_environment_copy_restores_visual_studio_key_case(self):
+        environment = {
+            "PATH": "D:/toolchain",
+            "VCTOOLSVERSION": "14.44.35207\\",
+            "VSINSTALLDIR": "C:/Visual Studio/",
+            "WINDOWSSDKVERSION": "10.0.26100.0\\",
+        }
+        normalized = normalize_windows_environment(environment)
+        self.assertEqual(normalized["VCToolsVersion"], "14.44.35207\\")
+        self.assertEqual(normalized["WindowsSDKVersion"], "10.0.26100.0\\")
+        self.assertEqual(normalized["VSINSTALLDIR"], "C:/Visual Studio/")
+
+    def test_linux_chainload_keeps_vcpkg_architecture_toolchain(self):
+        text = linux_chainload_toolchain(Path("/tmp/c/v"))
+        self.assertIn("VCPKG_TARGET_ARCHITECTURE", text)
+        self.assertIn('scripts/toolchains/linux.cmake")', text)
+        self.assertIn('CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64"', text)
+        self.assertIn("/usr/bin/gcc-12", text)
+        self.assertIn("FORCE", text)
+
+        changed = text.replace("gcc-12", "gcc-13")
+        self.assertNotEqual(
+            compatible_key("linux", {}, {"recipe": text}, "x64-linux"),
+            compatible_key("linux", {}, {"recipe": changed}, "x64-linux"),
         )
 
 
