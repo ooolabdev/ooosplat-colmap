@@ -102,9 +102,10 @@ def images(directory):
 def sanitized_env(platform):
     env = os.environ.copy()
     for key in list(env):
-        if key.startswith(
+        normalized = key.upper()
+        if normalized.startswith(
             ("CUDA", "VCPKG", "CCACHE", "DYLD_", "LD_", "QT_")
-        ) or key in (
+        ) or normalized in (
             "CMAKE_PREFIX_PATH",
             "OPENIMAGEIO_PLUGIN_PATH",
             "OIIO_LIBRARY_PATH",
@@ -113,13 +114,21 @@ def sanitized_env(platform):
             "LIBPATH",
         ):
             env.pop(key, None)
-    env["PATH"] = (
-        str(Path(env["SystemRoot"]) / "System32")
-        + os.pathsep
-        + env["SystemRoot"]
-        if platform == "windows"
-        else "/usr/bin:/bin:/usr/sbin:/sbin"
-    )
+    if platform == "windows":
+        system_root = next(
+            (
+                value
+                for key, value in env.items()
+                if key.upper() == "SYSTEMROOT"
+            ),
+            None,
+        )
+        require(system_root, "Windows SystemRoot is unavailable")
+        env["PATH"] = (
+            str(Path(system_root) / "System32") + os.pathsep + system_root
+        )
+    else:
+        env["PATH"] = "/usr/bin:/bin:/usr/sbin:/sbin"
     env["CUDA_VISIBLE_DEVICES"] = "-1"
     env["LC_ALL"] = "C.UTF-8" if platform == "linux" else "en_US.UTF-8"
     env["OMP_NUM_THREADS"] = "1"

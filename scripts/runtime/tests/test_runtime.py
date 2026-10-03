@@ -887,6 +887,24 @@ class ReleaseTests(unittest.TestCase):
 
 
 class WorkflowAndFixtureTests(unittest.TestCase):
+    def test_windows_sanitized_environment_accepts_native_key_casing(self):
+        with patch.dict(
+            os.environ,
+            {
+                "SYSTEMROOT": r"C:\Windows",
+                "Cuda_Path": r"C:\CUDA",
+                "vcpkg_root": r"C:\vcpkg",
+            },
+            clear=True,
+        ):
+            env = sanitized_env("windows")
+        self.assertEqual(
+            env["PATH"],
+            str(Path(r"C:\Windows") / "System32") + os.pathsep + r"C:\Windows",
+        )
+        self.assertNotIn("Cuda_Path", env)
+        self.assertNotIn("vcpkg_root", env)
+
     def test_cache_miss_restore_and_failed_run_save_contract(self):
         import yaml
 
