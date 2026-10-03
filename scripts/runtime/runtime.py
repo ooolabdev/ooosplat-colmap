@@ -333,6 +333,19 @@ class Build:
                 )
                 inventory[component] = {**entry, "licenseFiles": license_paths}
                 shutil.rmtree(unpack)
+            if self.platform == "linux":
+                # NVIDIA redistributable archives use lib/, while nvcc's
+                # compiler-identification link command follows the conventional
+                # Toolkit layout and searches lib64/ (including lib64/stubs).
+                # Keep one verified set of files and expose that expected path.
+                lib64 = cuda / "lib64"
+                require(not lib64.exists(), "Unexpected CUDA lib64 collision")
+                lib64.symlink_to("lib", target_is_directory=True)
+                for library in ("libcudadevrt.a", "libcudart_static.a"):
+                    require(
+                        (lib64 / library).is_file(),
+                        f"CUDA link-time runtime is missing: {library}",
+                    )
             # Preserve the official vendor SDK metadata verbatim. This is an
             # assembled redistributable toolkit, not an installer-generated SDK.
             metadata = download(
