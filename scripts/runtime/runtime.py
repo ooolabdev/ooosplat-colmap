@@ -834,8 +834,6 @@ class Build:
                         self.tool("ccache"),
                     )
                 ),
-                "-DCMAKE_EXE_LINKER_FLAGS:STRING=/MANIFEST:EMBED "
-                "/MANIFESTINPUT:" + manifest.as_posix(),
             ]
             self.state["windowsUtf8Manifest"] = {
                 "path": str(manifest),
@@ -898,14 +896,6 @@ class Build:
             require(
                 sha256(manifest["path"]) == manifest["sha256"],
                 "Windows UTF-8 manifest changed after configuration",
-            )
-            require(
-                str(Path(manifest["path"])).replace("\\", "/").casefold()
-                in (self.build / "build.ninja")
-                .read_text(encoding="utf-8")
-                .replace("\\", "/")
-                .casefold(),
-                "Actual linker commands omit the Windows UTF-8 manifest",
             )
         files = list(
             (self.build / "CMakeFiles").glob("*/CMakeCUDACompiler.cmake")

@@ -695,7 +695,45 @@ def collect(build):
     target = build.stage / "bin" / executable.name
     shutil.copy2(executable, target)
     if build.platform == "windows":
+        utf8_manifest = Path(build.state["windowsUtf8Manifest"]["path"])
+        require(
+            sha256(utf8_manifest)
+            == build.state["windowsUtf8Manifest"]["sha256"],
+            "Windows UTF-8 manifest changed before packaging",
+        )
+        original_manifest = build.logs / "colmap-windows-original-manifest.xml"
+        merged_manifest = build.logs / "colmap-windows-merged-manifest.xml"
         extracted_manifest = build.logs / "colmap-windows-manifest.xml"
+        build.execute(
+            [
+                "mt.exe",
+                "-nologo",
+                f"-inputresource:{target};#1",
+                "-out:" + str(original_manifest),
+            ],
+            "windows-manifest",
+        )
+        build.execute(
+            [
+                "mt.exe",
+                "-nologo",
+                "-manifest",
+                original_manifest,
+                utf8_manifest,
+                "-out:" + str(merged_manifest),
+            ],
+            "windows-manifest",
+        )
+        build.execute(
+            [
+                "mt.exe",
+                "-nologo",
+                "-manifest",
+                merged_manifest,
+                f"-outputresource:{target};#1",
+            ],
+            "windows-manifest",
+        )
         build.execute(
             [
                 "mt.exe",
