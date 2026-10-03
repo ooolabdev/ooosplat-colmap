@@ -9,6 +9,7 @@ import shutil
 import sqlite3
 import struct
 import subprocess
+import sys
 import time
 from contextlib import closing, contextmanager, suppress
 from pathlib import Path
@@ -585,25 +586,13 @@ def local_verify(root, work, platform):
 @contextmanager
 def isolate(build):
     candidates = [build.root / name for name in ("i", "cuda", "install")]
-    if build.platform == "macos":
-        require(
-            os.environ.get("GITHUB_ACTIONS") == "true",
-            "Homebrew isolation is restricted to disposable CI runners",
-        )
-        prefix = Path(build.state["brewPrefix"])
-        require(
-            prefix.resolve() == Path("/opt/homebrew"),
-            "Unexpected Homebrew prefix; refusing to move it",
-        )
-        candidates.append(prefix)
     renamed = []
     try:
         for source in candidates:
             if not source.exists():
                 continue
             require(
-                source == Path("/opt/homebrew")
-                or source.resolve().is_relative_to(build.root),
+                source.resolve().is_relative_to(build.root),
                 "Unsafe isolation target",
             )
             target = source.with_name(source.name + ".colmap-hidden")
@@ -621,6 +610,23 @@ def isolate(build):
                 f"Cannot restore development directory: {source}",
             )
             target.rename(source)
+
+
+def macos_sandbox_profile(build):
+    require(
+        os.environ.get("GITHUB_ACTIONS") == "true",
+        "Homebrew isolation is restricted to GitHub Actions",
+    )
+    prefix = Path(build.state["brewPrefix"])
+    require(
+        prefix.as_posix() == "/opt/homebrew",
+        "Unexpected Homebrew prefix",
+    )
+    require(shutil.which("sandbox-exec"), "sandbox-exec is unavailable")
+    return (
+        "(version 1)\n(allow default)\n"
+        '(deny file-read* (subpath "/opt/homebrew"))\n'
+    )
 
 
 def verify(build, root):
@@ -672,9 +678,29 @@ def verify(build, root):
         )
         report = read_json(work / "中文 路径 CPU 验收/acceptance.json")
     else:
-        # Pre-import verifier extensions before hiding the Homebrew prefix.
         with isolate(build):
-            report = local_verify(root, work, build.platform)
+            if build.platform == "macos":
+                build.execute(
+                    [
+                        "sandbox-exec",
+                        "-p",
+                        macos_sandbox_profile(build),
+                        sys.executable,
+                        Path(__file__).resolve(),
+                        "--package",
+                        Path(root).resolve(),
+                        "--work",
+                        work,
+                        "--platform",
+                        "macos",
+                    ],
+                    "acceptance-" + index,
+                )
+                report = read_json(
+                    work / "涓枃 璺緞 CPU 楠屾敹/acceptance.json"
+                )
+            else:
+                report = local_verify(root, work, build.platform)
     shutil.copytree(
         work, build.logs / ("acceptance-" + index), dirs_exist_ok=True
     )

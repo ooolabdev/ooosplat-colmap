@@ -49,6 +49,7 @@ from smoke import (
     images,
     inspect_package,
     keypoints,
+    macos_sandbox_profile,
     sanitized_env,
 )
 
@@ -886,6 +887,16 @@ class WorkflowAndFixtureTests(unittest.TestCase):
             self.assertNotIn("LIB", env)
             self.assertNotIn("CUDA_PATH", env)
             self.assertEqual(env["CUDA_VISIBLE_DEVICES"], "-1")
+
+    def test_macos_isolation_denies_homebrew_without_moving_it(self):
+        build = SimpleNamespace(state={"brewPrefix": "/opt/homebrew"})
+        with (
+            patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}),
+            patch("smoke.shutil.which", return_value="/usr/bin/sandbox-exec"),
+        ):
+            profile = macos_sandbox_profile(build)
+        self.assertIn('(deny file-read* (subpath "/opt/homebrew"))', profile)
+        self.assertNotIn("file-write", profile)
 
 
 if __name__ == "__main__":
