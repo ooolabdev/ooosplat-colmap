@@ -835,7 +835,7 @@ class Build:
                     )
                 ),
                 "-DCMAKE_EXE_LINKER_FLAGS:STRING=/MANIFEST:EMBED "
-                "/MANIFESTINPUT:" + str(manifest),
+                "/MANIFESTINPUT:" + manifest.as_posix(),
             ]
             self.state["windowsUtf8Manifest"] = {
                 "path": str(manifest),
