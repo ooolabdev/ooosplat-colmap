@@ -37,7 +37,11 @@ from common import (
     write_json,
 )
 from release import CHECKS, assert_new_release, validate_manifests
-from runtime import linux_chainload_toolchain, normalize_windows_environment
+from runtime import (
+    linux_chainload_toolchain,
+    normalize_windows_environment,
+    windows_vcpkg_toolset,
+)
 from smoke import (
     check_loop_matches,
     check_mask,
@@ -198,6 +202,24 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(normalized["VCToolsVersion"], "14.44.35207\\")
         self.assertEqual(normalized["WindowsSDKVersion"], "10.0.26100.0\\")
         self.assertEqual(normalized["VSINSTALLDIR"], "C:/Visual Studio/")
+
+    def test_windows_vcpkg_selector_uses_prefix_and_canonical_path(self):
+        version, path = windows_vcpkg_toolset(
+            {
+                "VCToolsVersion": "14.44.35207\\",
+                "VSINSTALLDIR": (
+                    "C:\\Program Files\\Microsoft Visual Studio\\2022"
+                    "\\Enterprise\\"
+                ),
+            }
+        )
+        self.assertEqual(version, "14.44")
+        self.assertEqual(
+            path,
+            "C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022"
+            "\\\\Enterprise",
+        )
+        self.assertFalse(path.endswith(("/", "\\")))
 
     def test_linux_chainload_keeps_vcpkg_architecture_toolchain(self):
         text = linux_chainload_toolchain(Path("/tmp/c/v"))

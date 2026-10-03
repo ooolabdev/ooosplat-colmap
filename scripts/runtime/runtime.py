@@ -92,6 +92,19 @@ def normalize_windows_environment(environment):
     return result
 
 
+def windows_vcpkg_toolset(sdk):
+    full_version = sdk["VCToolsVersion"].rstrip("\\/")
+    match = re.fullmatch(r"(\d+\.\d+)\.\d+", full_version)
+    require(match, f"Unexpected VCToolsVersion: {full_version}")
+    visual_studio = sdk["VSINSTALLDIR"].rstrip("\\/")
+    require(visual_studio, "Empty VSINSTALLDIR")
+    # vcpkg requires this triplet value without a trailing separator.  Escape
+    # native backslashes for the generated CMake source rather than changing
+    # the path spelling to forward slashes.
+    cmake_path = visual_studio.replace("\\", "\\\\")
+    return match.group(1), cmake_path
+
+
 def linux_chainload_toolchain(vcpkg):
     official = (Path(vcpkg) / "scripts/toolchains/linux.cmake").as_posix()
     return "\n".join(
@@ -589,6 +602,11 @@ class Build:
             "windowsSdk": (
                 identity["sdk"] if self.platform == "windows" else None
             ),
+            "windowsVcpkgToolset": (
+                windows_vcpkg_toolset(identity["sdk"])
+                if self.platform == "windows"
+                else None
+            ),
             "linuxChainload": (
                 linux_chainload_toolchain(Path("/locked-vcpkg-root"))
                 if self.platform == "linux"
@@ -679,9 +697,9 @@ class Build:
             content = original.read_text()
             if self.platform == "windows":
                 sdk = self.state["toolchain"]["sdk"]
-                version = sdk["VCToolsVersion"].rstrip("\\/")
+                version, visual_studio = windows_vcpkg_toolset(sdk)
                 content += f'\nset(VCPKG_PLATFORM_TOOLSET v143)\nset(VCPKG_PLATFORM_TOOLSET_VERSION "{version}")\n'
-                content += f'set(VCPKG_VISUAL_STUDIO_PATH "{sdk["VSINSTALLDIR"].replace(chr(92), "/")}")\n'
+                content += f'set(VCPKG_VISUAL_STUDIO_PATH "{visual_studio}")\n'
             else:
                 chain = triplets / "host.cmake"
                 chain.write_text(linux_chainload_toolchain(vcpkg))
