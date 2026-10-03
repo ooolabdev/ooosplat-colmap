@@ -36,6 +36,7 @@ from common import (
     verify_checksums,
     write_json,
 )
+from compiler_launcher import normalize_argument
 from release import CHECKS, assert_new_release, validate_manifests
 from runtime import (
     linux_chainload_toolchain,
@@ -108,6 +109,19 @@ class CudaIdentityTests(unittest.TestCase):
 
 
 class CompilerTests(unittest.TestCase):
+    def test_windows_launcher_unquotes_only_forced_include_arguments(self):
+        self.assertEqual(
+            normalize_argument('/FI"D:/c/header.h"'), "/FID:/c/header.h"
+        )
+        self.assertEqual(
+            normalize_argument('--pre-include="D:/c/cuda_header.h"'),
+            "--pre-include=D:/c/cuda_header.h",
+        )
+        self.assertEqual(
+            normalize_argument('/I"D:/ordinary include"'),
+            '/I"D:/ordinary include"',
+        )
+
     def setUp(self):
         self.nvcc = Path("D:/c/cuda/bin/nvcc.exe").as_posix()
         self.cache = (

@@ -9,6 +9,7 @@ import platform as host
 import re
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -272,6 +273,10 @@ class Build:
             "testedSystem": host.platform(),
             "triplet": self.triplet,
         }
+        if self.platform == "windows":
+            launcher = self.root / "tools/compiler-launcher.py"
+            shutil.copy2(HERE / "compiler_launcher.py", launcher)
+            self.state["tools"]["compilerLauncher"] = str(launcher)
         if self.platform != "macos":
             cuda = self.root / "cuda"
             cuda.mkdir()
@@ -816,6 +821,17 @@ class Build:
             "-DHIP_ENABLED=OFF",
             *[f"-D{name}=OFF" for name in LOCK["disabledFeatures"]],
         ]
+        if self.platform == "windows":
+            flags.append(
+                "-DCCACHE:STRING="
+                + ";".join(
+                    (
+                        sys.executable,
+                        self.tool("compilerLauncher"),
+                        self.tool("ccache"),
+                    )
+                )
+            )
         if self.platform == "macos":
             omp = self.execute(
                 ["brew", "--prefix", "libomp"], "configure"
