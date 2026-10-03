@@ -24,6 +24,8 @@ from common import (
     write_json,
 )
 
+UNICODE_WORK_DIR = "中文 路径 CPU 验收"
+
 
 def create_model(directory):
     directory = Path(directory)
@@ -383,7 +385,7 @@ def check_loop_matches(database):
 
 def local_verify(root, work, platform):
     root = Path(root).resolve()
-    work = Path(work).resolve() / "中文 路径 CPU 验收"
+    work = Path(work).resolve() / UNICODE_WORK_DIR
     work.mkdir(parents=True, exist_ok=True)
     info = inspect_package(root, platform)
     env = sanitized_env(platform)
@@ -657,6 +659,16 @@ def macos_sandbox_profile(build):
     )
 
 
+def read_acceptance_report(work):
+    reports = list(Path(work).rglob("acceptance.json"))
+    require(
+        len(reports) == 1,
+        "Acceptance must produce exactly one report: "
+        + ", ".join(map(str, reports)),
+    )
+    return read_json(reports[0])
+
+
 def verify(build, root):
     require(
         build.state.get("collected"), "Collect dependencies before verification"
@@ -704,7 +716,7 @@ def verify(build, root):
             ],
             "acceptance-" + index,
         )
-        report = read_json(work / "中文 路径 CPU 验收/acceptance.json")
+        report = read_acceptance_report(work)
     else:
         with isolate(build):
             if build.platform == "macos":
@@ -724,9 +736,7 @@ def verify(build, root):
                     ],
                     "acceptance-" + index,
                 )
-                report = read_json(
-                    work / "涓枃 璺緞 CPU 楠屾敹/acceptance.json"
-                )
+                report = read_acceptance_report(work)
             else:
                 report = local_verify(root, work, build.platform)
     shutil.copytree(

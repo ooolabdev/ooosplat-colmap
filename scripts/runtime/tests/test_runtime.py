@@ -50,6 +50,7 @@ from smoke import (
     inspect_package,
     keypoints,
     macos_sandbox_profile,
+    read_acceptance_report,
     sanitized_env,
 )
 from smoke import (
@@ -455,6 +456,16 @@ class RuntimeGateTests(unittest.TestCase):
             self.assertEqual(
                 copied.read_text().strip(), "actionable mapper error"
             )
+
+    def test_acceptance_report_is_found_below_real_unicode_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            report = root / "中文 路径 CPU 验收/acceptance.json"
+            write_json(report, {"passed": True})
+            self.assertEqual(read_acceptance_report(root), {"passed": True})
+            write_json(root / "duplicate/acceptance.json", {"passed": False})
+            with self.assertRaisesRegex(RuntimeError, "exactly one report"):
+                read_acceptance_report(root)
 
     def test_missing_runtime_plugin_and_license_block_delivery(self):
         for missing in (
