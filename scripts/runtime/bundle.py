@@ -26,7 +26,7 @@ from common import (
 )
 
 LINUX_SYSTEM = re.compile(
-    r"^(?:ld-linux-x86-64\.so\.2|lib(?:c|m|pthread|dl|rt|resolv|util|anl)\.so\.[0-9]+)$"
+    r"^(?:ld-linux-x86-64\.so\.2|libgcc_s\.so\.1|lib(?:c|m|pthread|dl|rt|resolv|util|anl)\.so\.[0-9]+)$"
 )
 DRIVERS = re.compile(
     r"^(?:libcuda\.so(?:\..*)?|libnvidia-.*|nvcuda\.dll|nvapi(?:64)?\.dll)$",
@@ -385,7 +385,7 @@ class Collector:
             name, origin = match.groups()
             if LINUX_SYSTEM.match(name) or DRIVERS.match(name):
                 self.external[name] = (
-                    "System glibc/loader"
+                    "System base runtime supplied by the supported Ubuntu target"
                     if LINUX_SYSTEM.match(name)
                     else "External GPU driver"
                 )

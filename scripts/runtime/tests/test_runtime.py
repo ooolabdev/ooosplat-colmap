@@ -17,7 +17,14 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from bundle import Collector, collect, package, runtime_type, shared_runtime
+from bundle import (
+    LINUX_SYSTEM,
+    Collector,
+    collect,
+    package,
+    runtime_type,
+    shared_runtime,
+)
 from common import (
     HERE,
     LOCK,
@@ -323,6 +330,11 @@ class CacheAndArchiveTests(unittest.TestCase):
             file.write_bytes(header)
             with self.assertRaises(RuntimeError):
                 runtime_type(file)
+
+    def test_linux_base_runtime_is_external_but_cpp_runtime_is_bundled(self):
+        self.assertIsNotNone(LINUX_SYSTEM.match("libgcc_s.so.1"))
+        self.assertIsNotNone(LINUX_SYSTEM.match("libc.so.6"))
+        self.assertIsNone(LINUX_SYSTEM.match("libstdc++.so.6"))
 
     def test_unknown_shared_object_and_relocated_reuse_keep_provenance(self):
         with tempfile.TemporaryDirectory() as d:
